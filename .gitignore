@@ -2,7 +2,7 @@
 __pycache__/
 *.py[codz]
 *$py.class
-
+training_data_ht2025.csv
 # C extensions
 *.so
 
