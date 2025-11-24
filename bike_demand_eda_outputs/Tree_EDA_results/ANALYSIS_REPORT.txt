@@ -1,0 +1,168 @@
+Tree - SPECIFIC ANALYSIS
+================================================================================
+
+================================================================================
+DATASET OVERVIEW
+================================================================================
+
+Shape: 1600 samples, 18 features
+Target distribution:
+  low_bike_demand: 1312 (82.00%)
+  high_bike_demand: 288 (18.00%)
+
+Class imbalance ratio: 4.56:1
+WARNING: Imbalanced classes detected
+  - Use stratified sampling for train/test splits
+  - Consider class weights or SMOTE
+  - Evaluate using F1-score, not just accuracy
+
+--------------------------------------------------------------------------------
+FEATURE TYPES
+--------------------------------------------------------------------------------
+
+Categorical features (6):
+  hour_of_day: 24 unique values
+  day_of_week: 7 unique values
+  month: 12 unique values
+  holiday: 2 unique values
+  weekday: 2 unique values
+  summertime: 2 unique values
+
+Numerical features (9):
+  temp: [-9.10, 35.60]
+  dew: [-18.40, 24.30]
+  humidity: [15.85, 99.89]
+  precip: [0.00, 25.87]
+  snow: [0.00, 0.00]
+  snowdepth: [0.00, 6.71]
+  windspeed: [0.00, 43.80]
+  cloudcover: [0.00, 100.00]
+  visibility: [0.10, 16.00]
+
+
+================================================================================
+TEMPORAL PATTERN ANALYSIS
+================================================================================
+
+1. HOURLY PATTERNS
+--------------------------------------------------------------------------------
+Peak demand hours:
+  18:00 - 73.6% high demand (53.0 samples)
+  17:00 - 59.7% high demand (72.0 samples)
+  15:00 - 51.6% high demand (64.0 samples)
+  16:00 - 47.0% high demand (83.0 samples)
+  19:00 - 43.9% high demand (57.0 samples)
+
+Lowest demand hours:
+  00:00 - 0.0% high demand (84.0 samples)
+  01:00 - 0.0% high demand (67.0 samples)
+  02:00 - 0.0% high demand (53.0 samples)
+  03:00 - 0.0% high demand (69.0 samples)
+  04:00 - 0.0% high demand (69.0 samples)
+
+2. WEEKLY PATTERNS
+--------------------------------------------------------------------------------
+Weekend: 25.0% high demand (464.0 samples)
+Weekday: 15.1% high demand (1136.0 samples)
+
+Weekday vs Weekend significance: p=0.0000
+
+3. SEASONAL PATTERNS
+--------------------------------------------------------------------------------
+Jan: 3.9% high demand (128.0 samples)
+Feb: 5.3% high demand (131.0 samples)
+Mar: 17.7% high demand (147.0 samples)
+Apr: 26.4% high demand (140.0 samples)
+May: 18.0% high demand (133.0 samples)
+Jun: 29.2% high demand (137.0 samples)
+Jul: 21.3% high demand (136.0 samples)
+Aug: 23.1% high demand (121.0 samples)
+Sep: 29.8% high demand (131.0 samples)
+Oct: 25.2% high demand (119.0 samples)
+Nov: 12.1% high demand (141.0 samples)
+Dec: 4.4% high demand (136.0 samples)
+
+
+================================================================================
+WEATHER IMPACT ANALYSIS
+================================================================================
+
+1. TEMPERATURE
+--------------------------------------------------------------------------------
+Correlation with demand: +0.3370
+  <0°C: 0.0% demand (69.0 samples)
+  0-10°C: 3.6% demand (469.0 samples)
+  10-20°C: 18.4% demand (473.0 samples)
+  20-30°C: 29.4% demand (534.0 samples)
+  >30°C: 49.1% demand (55.0 samples)
+
+2. PRECIPITATION
+--------------------------------------------------------------------------------
+  No rain: 19.4% demand (1445.0 samples)
+  Rain: 5.2% demand (155.0 samples)
+
+3. SNOW CONDITIONS
+--------------------------------------------------------------------------------
+  Only one category present in dataset
+  No snow: 18.0% demand (1600.0 samples)
+
+4. WIND SPEED
+--------------------------------------------------------------------------------
+Correlation with demand: +0.0960
+
+
+================================================================================
+TREE-BASED METHODS - SPECIFIC INSIGHTS
+================================================================================
+
+TREE ADVANTAGES FOR THIS DATASET:
+--------------------------------------------------------------------------------
+
+1. NON-LINEAR PATTERNS DETECTION
+   Trees excel with non-monotonic relationships:
+
+   hour_of_day: High variance (0.049) - likely non-linear
+
+2. EXPECTED FEATURE IMPORTANCE RANKING
+   Based on correlation and variance analysis:
+
+   1. temp           : |correlation| = 0.3370
+   2. humidity       : |correlation| = 0.3087
+   3. dew            : |correlation| = 0.1327
+   4. snow           : |correlation| = nan
+   5. visibility     : |correlation| = 0.1134
+   6. windspeed      : |correlation| = 0.0960
+   7. precip         : |correlation| = 0.0593
+   8. snowdepth      : |correlation| = 0.0475
+
+3. CATEGORICAL FEATURE HANDLING
+--------------------------------------------------------------------------------
+   Trees handle categorical features natively
+   Categorical features in dataset:
+   • hour_of_day: 24 categories
+   • day_of_week: 7 categories
+   • month: 12 categories
+   • holiday: 2 categories
+   • weekday: 2 categories
+   • summertime: 2 categories
+
+4. POTENTIAL FEATURE INTERACTIONS
+   Trees automatically capture interactions:
+
+   Expected strong interactions:
+   • hour_of_day × weekday (commute patterns)
+   • temp × month (seasonal temperature effects)
+   • precip × windspeed (severe weather conditions)
+
+5. TREE PREPROCESSING RECOMMENDATIONS
+--------------------------------------------------------------------------------
+   • Feature scaling: NOT needed
+   • Encoding: Leave categorical as-is or use label encoding
+   • Missing values: Trees handle naturally (surrogate splits)
+   • Outliers: Generally not a concern for trees
+
+   HYPERPARAMETERS TO TUNE:
+   • max_depth: Start with 5-15
+   • min_samples_split: Try 10-50
+   • min_samples_leaf: Try 5-20
+   • For Random Forest: n_estimators=100-500, max_features='sqrt'
