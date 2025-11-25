@@ -1,0 +1,189 @@
+KNN - SPECIFIC ANALYSIS
+================================================================================
+
+================================================================================
+DATASET OVERVIEW
+================================================================================
+
+Shape: 1600 samples, 18 features
+Target distribution:
+  low_bike_demand: 1312 (82.00%)
+  high_bike_demand: 288 (18.00%)
+
+Class imbalance ratio: 4.56:1
+WARNING: Imbalanced classes detected
+  - Use stratified sampling for train/test splits
+  - Consider class weights or SMOTE
+  - Evaluate using F1-score, not just accuracy
+
+--------------------------------------------------------------------------------
+FEATURE TYPES
+--------------------------------------------------------------------------------
+
+Categorical features (6):
+  hour_of_day: 24 unique values
+  day_of_week: 7 unique values
+  month: 12 unique values
+  holiday: 2 unique values
+  weekday: 2 unique values
+  summertime: 2 unique values
+
+Numerical features (9):
+  temp: [-9.10, 35.60]
+  dew: [-18.40, 24.30]
+  humidity: [15.85, 99.89]
+  precip: [0.00, 25.87]
+  snow: [0.00, 0.00]
+  snowdepth: [0.00, 6.71]
+  windspeed: [0.00, 43.80]
+  cloudcover: [0.00, 100.00]
+  visibility: [0.10, 16.00]
+
+
+================================================================================
+TEMPORAL PATTERN ANALYSIS
+================================================================================
+
+1. HOURLY PATTERNS
+--------------------------------------------------------------------------------
+Peak demand hours:
+  18:00 - 73.6% high demand (53.0 samples)
+  17:00 - 59.7% high demand (72.0 samples)
+  15:00 - 51.6% high demand (64.0 samples)
+  16:00 - 47.0% high demand (83.0 samples)
+  19:00 - 43.9% high demand (57.0 samples)
+
+Lowest demand hours:
+  00:00 - 0.0% high demand (84.0 samples)
+  01:00 - 0.0% high demand (67.0 samples)
+  02:00 - 0.0% high demand (53.0 samples)
+  03:00 - 0.0% high demand (69.0 samples)
+  04:00 - 0.0% high demand (69.0 samples)
+
+2. WEEKLY PATTERNS
+--------------------------------------------------------------------------------
+Weekend: 25.0% high demand (464.0 samples)
+Weekday: 15.1% high demand (1136.0 samples)
+
+Weekday vs Weekend significance: p=0.0000
+
+3. SEASONAL PATTERNS
+--------------------------------------------------------------------------------
+Jan: 3.9% high demand (128.0 samples)
+Feb: 5.3% high demand (131.0 samples)
+Mar: 17.7% high demand (147.0 samples)
+Apr: 26.4% high demand (140.0 samples)
+May: 18.0% high demand (133.0 samples)
+Jun: 29.2% high demand (137.0 samples)
+Jul: 21.3% high demand (136.0 samples)
+Aug: 23.1% high demand (121.0 samples)
+Sep: 29.8% high demand (131.0 samples)
+Oct: 25.2% high demand (119.0 samples)
+Nov: 12.1% high demand (141.0 samples)
+Dec: 4.4% high demand (136.0 samples)
+
+
+================================================================================
+WEATHER IMPACT ANALYSIS
+================================================================================
+
+1. TEMPERATURE
+--------------------------------------------------------------------------------
+Correlation with demand: +0.3370
+  <0°C: 0.0% demand (69.0 samples)
+  0-10°C: 3.6% demand (469.0 samples)
+  10-20°C: 18.4% demand (473.0 samples)
+  20-30°C: 29.4% demand (534.0 samples)
+  >30°C: 49.1% demand (55.0 samples)
+
+2. PRECIPITATION
+--------------------------------------------------------------------------------
+  No rain: 19.4% demand (1445.0 samples)
+  Rain: 5.2% demand (155.0 samples)
+
+3. SNOW CONDITIONS
+--------------------------------------------------------------------------------
+  Only one category present in dataset
+  No snow: 18.0% demand (1600.0 samples)
+
+4. WIND SPEED
+--------------------------------------------------------------------------------
+Correlation with demand: +0.0960
+
+
+================================================================================
+K-NEAREST NEIGHBORS (KNN) - SPECIFIC INSIGHTS
+================================================================================
+
+KNN CRITICAL REQUIREMENTS:
+--------------------------------------------------------------------------------
+
+1. FEATURE SCALING ANALYSIS
+   KNN is EXTREMELY sensitive to feature scales (uses distance):
+
+   Raw feature scales:
+   cloudcover     : range=  100.00, std=  32.75
+   humidity       : range=   84.04, std=  19.08
+   temp           : range=   44.70, std=   9.26
+   windspeed      : range=   43.80, std=   7.76
+   dew            : range=   42.70, std=  10.03
+   precip         : range=   25.87, std=   0.92
+   visibility     : range=   15.90, std=   2.32
+   snowdepth      : range=    6.71, std=   0.42
+   snow           : range=    0.00, std=   0.00
+
+   Scale ratio (max/min): inf:1
+   ⚠️  CRITICAL: Without scaling, high-range features will dominate distance
+   RECOMMENDATION: StandardScaler or MinMaxScaler is MANDATORY
+
+2. CURSE OF DIMENSIONALITY
+   Total features: 15
+   Sample size: 1600
+   Samples per dimension: 107
+   ✓ Adequate samples-to-dimensions ratio
+
+3. LOCAL CLASS BALANCE ANALYSIS
+   KNN predictions depend on local neighborhood composition:
+
+
+   Local class balance by hour_of_day:
+   0-3h        :   0.0% high demand (258 samples)
+   4-7h        :   5.5% high demand (272 samples)
+   8-11h       :  21.6% high demand (250 samples)
+   12-15h      :  36.3% high demand (295 samples)
+   16-19h      :  46.8% high demand (237 samples)
+   20-23h      :   0.5% high demand (204 samples)
+
+   Local class balance by temp:
+   <0°C        :   0.0% high demand ( 69 samples)
+   0-10°C      :   3.6% high demand (469 samples)
+   10-20°C     :  18.4% high demand (473 samples)
+   20-30°C     :  29.4% high demand (534 samples)
+   >30°C       :  49.1% high demand ( 55 samples)
+
+4. DISTANCE METRIC SELECTION
+--------------------------------------------------------------------------------
+   • Euclidean: Default, works well after standardization
+   • Manhattan: More robust to outliers
+   • Minkowski (p=1.5): Compromise between Euclidean and Manhattan
+
+5. INITIAL K VALUE ESTIMATION
+--------------------------------------------------------------------------------
+   Dataset size: 1600
+   sqrt(n) = 40
+   Rule of thumb: Start with K around 40
+   RECOMMENDATION: Grid search K in [20, 40, 60]
+   Use odd K values to avoid ties
+
+6. KNN PREPROCESSING RECOMMENDATIONS
+--------------------------------------------------------------------------------
+   • Feature scaling: MANDATORY (StandardScaler or MinMaxScaler)
+   • Encoding: One-hot encode categoricals (increases dimensionality)
+   • Outliers: Can significantly impact predictions - consider removal
+   • Feature selection: Reduce dimensionality if possible
+
+   HYPERPARAMETERS TO TUNE:
+   • n_neighbors: Try odd values in [3, 5, 7, ..., 60]
+   • weights: Try both 'uniform' and 'distance'
+   • metric: Try 'euclidean', 'manhattan', 'minkowski'
+   • p (for Minkowski): Try [1, 1.5, 2]
