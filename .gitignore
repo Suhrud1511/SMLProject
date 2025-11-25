@@ -3,6 +3,12 @@ __pycache__/
 *.py[codz]
 *$py.class
 training_data_ht2025.csv
+X_train.csv
+X_test.csv
+y_train.csv
+y_test.csv
+tree_results/
+preprocessing_report.txt
 # C extensions
 *.so
 

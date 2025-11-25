@@ -1,4 +1,5 @@
 import os
+import sys
 import pandas as pd
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
@@ -11,18 +12,20 @@ from sklearn.metrics import (
 import warnings
 warnings.filterwarnings('ignore')
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from preprocessing import BikePreprocessor
+
 
 class TreeClassifierPipeline:
 
     def __init__(self, X_train_path, X_test_path, y_train_path, y_test_path, random_state=42):
-        self.X_train = pd.read_csv(X_train_path)
-        self.X_test = pd.read_csv(X_test_path)
-        self.y_train = pd.read_csv(y_train_path).squeeze()
-        self.y_test = pd.read_csv(y_test_path).squeeze()
-        
-        # Convert string labels to binary (0/1)
-        self.y_train = (self.y_train == 'high_bike_demand').astype(int)
-        self.y_test = (self.y_test == 'high_bike_demand').astype(int)
+        try:
+            self.X_train = pd.read_csv(X_train_path)
+            self.X_test = pd.read_csv(X_test_path)
+            self.y_train = pd.read_csv(y_train_path, header=None).squeeze()
+            self.y_test = pd.read_csv(y_test_path, header=None).squeeze()
+        except FileNotFoundError as e:
+            raise FileNotFoundError(f"Required data file not found: {str(e)}")
         
         self.random_state = random_state
         self.results_dir = 'tree_results'
@@ -32,7 +35,7 @@ class TreeClassifierPipeline:
         self.rf_model = None
         self.results = {}
 
-    def train_decision_tree(self, max_depth=10, min_samples_split=20, min_samples_leaf=10):
+    def train_decision_tree(self, max_depth=14, min_samples_split=9, min_samples_leaf=4):
         self.dt_model = DecisionTreeClassifier(
             max_depth=max_depth,
             min_samples_split=min_samples_split,
@@ -43,13 +46,14 @@ class TreeClassifierPipeline:
         self.dt_model.fit(self.X_train, self.y_train)
         return self.dt_model
 
-    def train_random_forest(self, n_estimators=100, max_depth=10, min_samples_leaf=10):
+    def train_random_forest(self, n_estimators=350, max_depth=17, min_samples_leaf=2):
         self.rf_model = RandomForestClassifier(
             n_estimators=n_estimators,
             max_depth=max_depth,
             min_samples_leaf=min_samples_leaf,
             max_features='sqrt',
             class_weight='balanced',
+            bootstrap=True,
             n_jobs=-1,
             random_state=self.random_state
         )
@@ -85,29 +89,43 @@ class TreeClassifierPipeline:
         print(f"Train target distribution:\n{self.y_train.value_counts()}\n")
 
         print("Training Decision Tree...")
-        self.train_decision_tree(max_depth=10, min_samples_split=20, min_samples_leaf=10)
+        self.train_decision_tree(max_depth=14, min_samples_split=9, min_samples_leaf=4)
 
         print("Training Random Forest...")
-        self.train_random_forest(n_estimators=100, max_depth=10, min_samples_leaf=10)
+        self.train_random_forest(n_estimators=350, max_depth=17, min_samples_leaf=2)
 
         print("\nEvaluating Decision Tree...")
         dt_metrics = self.evaluate_model(self.dt_model, 'Decision Tree')
         print(f"DT F1-Score: {dt_metrics['f1']:.4f}")
+        print(f"DT ROC-AUC: {dt_metrics['roc_auc']:.4f}")
 
-        print("Evaluating Random Forest...")
+        print("\nEvaluating Random Forest...")
         rf_metrics = self.evaluate_model(self.rf_model, 'Random Forest')
         print(f"RF F1-Score: {rf_metrics['f1']:.4f}")
+        print(f"RF ROC-AUC: {rf_metrics['roc_auc']:.4f}")
 
 
 
 if __name__ == '__main__':
-    pipeline = TreeClassifierPipeline(
-        'X_train.csv', 
-        'X_test.csv', 
-        'y_train.csv', 
-        'y_test.csv'
-    )
-    pipeline.run()
+    try:
+        preprocessor = BikePreprocessor(
+            target='increase_stock',
+            input_file='training_data_ht2025.csv',
+            output_dir='.'
+        )
+        preprocessor.tree()
+        
+        pipeline = TreeClassifierPipeline(
+            'X_train.csv', 
+            'X_test.csv', 
+            'y_train.csv', 
+            'y_test.csv'
+        )
+        pipeline.run()
+    except FileNotFoundError as e:
+        print(f"Error: {str(e)}")
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
 
 # #Results after running the script:
 # Data loaded: (1600, 17)
@@ -128,3 +146,21 @@ if __name__ == '__main__':
 # DT F1-Score: 0.7020
 # Evaluating Random Forest...
 # RF F1-Score: 0.6759
+
+# # Another run after fixing preprocessing issues:
+# Data loaded: (1600, 17)
+# Loaded training data: (1280, 14)
+# Loaded test data: (320, 14)
+# Train target distribution:
+# 0
+# 0    1050
+# 1     230
+# Name: count, dtype: int64
+
+# Training Decision Tree...
+# Training Random Forest...
+
+# Evaluating Decision Tree...
+# DT F1-Score: 0.6897
+# Evaluating Random Forest...
+# RF F1-Score: 0.7101
