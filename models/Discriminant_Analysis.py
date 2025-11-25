@@ -1,82 +1,101 @@
+import os
+import sys
 import sklearn.discriminant_analysis as skl_da
-from sklearn.model_selection import train_test_split, StratifiedKFold
-from sklearn.metrics import accuracy_score
-from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import Pipeline
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, confusion_matrix
 import pandas as pd
+import warnings
+warnings.filterwarnings('ignore')
 
-# Load training data, will need to be changed to the correct path when csv is preprocessed  
-training_data = pd.read_csv("training_data_ht2025.csv")
-print(training_data.info())
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from preprocessing import BikePreprocessor
 
-# Convert target variable to categorical codes, not necessary if already done in csv
-training_data["increase_stock"] = training_data["increase_stock"].astype("category").cat.codes
+preprocessor = BikePreprocessor(
+    target='increase_stock',
+    input_file='training_data_ht2025.csv',
+    output_dir='.'
+)
+preprocessor.lda()
 
-X = training_data.drop(columns=["increase_stock"])
-y = training_data["increase_stock"]
+X_train = pd.read_csv('X_train.csv')
+X_test = pd.read_csv('X_test.csv')
+y_train = pd.read_csv('y_train.csv', header=None).squeeze()
+y_test = pd.read_csv('y_test.csv', header=None).squeeze()
 
-def discriminant_analysis(model, X, y):
-    """
-    Performs discriminant analysis using the specified model on the provided feature and target data.
-    Splits the data into training and test sets, fits a pipeline with scaling and the model,
-    predicts class labels, and prints a confusion matrix and accuracy score.
+print(f"Loaded preprocessed LDA data:")
+print(f"  X_train: {X_train.shape}")
+print(f"  X_test: {X_test.shape}")
+print(f"  y_train: {y_train.shape}")
+print(f"  y_test: {y_test.shape}\n")
 
-    Parameters:
-        model: scikit-learn discriminant analysis model (e.g., LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis)
-        X: pandas.DataFrame, feature data
-        y: pandas.Series or array-like, target labels
+def evaluate_model(model, X_train, X_test, y_train, y_test, model_name):
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    y_pred_proba = model.predict_proba(X_test)[:, 1]
+    
+    accuracy = accuracy_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
+    roc_auc = roc_auc_score(y_test, y_pred_proba)
+    cm = confusion_matrix(y_test, y_pred)
+    
+    print(f"{model_name}:")
+    print(f"  Confusion Matrix:\n{cm}")
+    print(f"  Accuracy: {accuracy:.4f}")
+    print(f"  F1-Score: {f1:.4f}")
+    print(f"  ROC-AUC: {roc_auc:.4f}\n")
+    
+    return {'accuracy': accuracy, 'f1': f1, 'roc_auc': roc_auc}
 
-    Output:
-        Prints the confusion matrix and accuracy score for the test set predictions.
-    """
-    X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.33, random_state=42)
-
-    model_da = Pipeline([
-        ("scaler", StandardScaler()), # normalize data, not necessary if csv is already normalized
-        ("model", model)
-    ])
-    model_da.fit(X_train, Y_train)
-    predict_da = model_da.predict(X_test)
-
-    print(pd.crosstab(predict_da, Y_test))
-    print(accuracy_score(Y_test, predict_da))
-
-def discriminant_analysis_kfold(model, X, y):
-    """
-    Performs discriminant analysis using the specified model on the provided feature and 
-    target data with a stratified k-fold cross-validation.
-    Splits the data into training and test sets, fits a pipeline with scaling and the model,
-    predicts class labels, and prints a confusion matrix and accuracy score.
-
-    Parameters:
-        model: scikit-learn discriminant analysis model (e.g., LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis)
-        X: pandas.DataFrame, feature data
-        y: pandas.Series or array-like, target labels
-
-    Output:
-        Prints the confusion matrix and accuracy score for the test set predictions.
-    """
-    # https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.StratifiedKFold.html
-    kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-    for train_index, test_index in kf.split(X, y):
-        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
-        Y_train, Y_test = y.iloc[train_index], y.iloc[test_index]
-
-        model_da = Pipeline([
-            ("scaler", StandardScaler()), # normalize data, not necessary if csv is already normalized
-            ("model", model)
-        ])
-        model_da.fit(X_train, Y_train)
-        predict_da = model_da.predict(X_test)
-
-        print(pd.crosstab(predict_da, Y_test))
-        print(accuracy_score(Y_test, predict_da))
+def cross_validate_model(model_class, X, y, n_splits=5, model_name="Model"):
+    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+    
+    accuracies = []
+    f1_scores = []
+    roc_aucs = []
+    
+    for fold, (train_idx, test_idx) in enumerate(skf.split(X, y), 1):
+        X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+        y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
+        
+        model = model_class()
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        y_pred_proba = model.predict_proba(X_test)[:, 1]
+        
+        accuracy = accuracy_score(y_test, y_pred)
+        f1 = f1_score(y_test, y_pred)
+        roc_auc = roc_auc_score(y_test, y_pred_proba)
+        
+        accuracies.append(accuracy)
+        f1_scores.append(f1)
+        roc_aucs.append(roc_auc)
+        
+        print(f"{model_name} Fold {fold}:")
+        print(f"  Accuracy: {accuracy:.4f}, F1: {f1:.4f}, ROC-AUC: {roc_auc:.4f}")
+    
+    print(f"\n{model_name} Cross-Validation Results:")
+    print(f"  Mean Accuracy: {pd.Series(accuracies).mean():.4f} ± {pd.Series(accuracies).std():.4f}")
+    print(f"  Mean F1-Score: {pd.Series(f1_scores).mean():.4f} ± {pd.Series(f1_scores).std():.4f}")
+    print(f"  Mean ROC-AUC: {pd.Series(roc_aucs).mean():.4f} ± {pd.Series(roc_aucs).std():.4f}\n")
 
 
-#  run discriminant analysis with LDA and QDA
-print("LDA")
-LDA = discriminant_analysis(skl_da.LinearDiscriminantAnalysis(), X, y)
-LDA = discriminant_analysis_kfold(skl_da.LinearDiscriminantAnalysis(), X, y)
-print("QDA")
-QDA = discriminant_analysis(skl_da.QuadraticDiscriminantAnalysis(reg_param=0.1), X, y)
-QDA = discriminant_analysis_kfold(skl_da.QuadraticDiscriminantAnalysis(reg_param=0.1), X, y)
+if __name__ == '__main__':
+    
+    print("LINEAR DISCRIMINANT ANALYSIS (LDA)")
+    
+    print("\nTrain/Test Evaluation:")
+    evaluate_model(skl_da.LinearDiscriminantAnalysis(), X_train, X_test, y_train, y_test, "LDA")
+    
+    print("Cross-Validation Evaluation:")
+    X_full = pd.concat([X_train, X_test], ignore_index=True)
+    y_full = pd.concat([y_train, y_test], ignore_index=True)
+    cross_validate_model(skl_da.LinearDiscriminantAnalysis, X_full, y_full, n_splits=5, model_name="LDA")
+    
+   
+    print("QUADRATIC DISCRIMINANT ANALYSIS (QDA)")
+    
+    print("\nTrain/Test Evaluation:")
+    evaluate_model(skl_da.QuadraticDiscriminantAnalysis(), X_train, X_test, y_train, y_test, "QDA")
+    
+    print("Cross-Validation Evaluation:")
+    cross_validate_model(skl_da.QuadraticDiscriminantAnalysis, X_full, y_full, n_splits=5, model_name="QDA")
