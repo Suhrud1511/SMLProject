@@ -12,7 +12,7 @@ print(training_data.info())
 # Convert target variable to categorical codes, not necessary if already done in csv
 training_data["increase_stock"] = training_data["increase_stock"].astype("category").cat.codes
 
-X = training_data.drop(columns=["increase_stock"])
+X = training_data.drop(columns=["increase_stock", "day_of_week"])
 y = training_data["increase_stock"]
 
 def discriminant_analysis(model, X, y):
