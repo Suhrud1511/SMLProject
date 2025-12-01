@@ -7,12 +7,16 @@ Original file is located at
     https://colab.research.google.com/drive/1H5ESWigHz7RaaKAtGBV1UX8v24ciGiJ0
 """
 
-from google.colab import files
-uploaded = files.upload()
+# from google.colab import files
+# uploaded = files.upload()
 
-!pip install scikit-learn pandas
+# !pip install scikit-learn pandas
 
 from preprocessing import BikePreprocessor
+import pandas as pd
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import StratifiedKFold, GridSearchCV
+from sklearn.metrics import accuracy_score, f1_score, classification_report
 import pandas as pd
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import StratifiedKFold, GridSearchCV
@@ -30,10 +34,7 @@ pre = BikePreprocessor(
 
 pre.logreg()
 
-import pandas as pd
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.model_selection import StratifiedKFold, GridSearchCV
-from sklearn.metrics import accuracy_score, f1_score, classification_report
+
 
 #loading the preprocessed data
 X_train = pd.read_csv("X_train.csv")
@@ -58,6 +59,7 @@ grid = GridSearchCV(
     scoring="f1",
     n_jobs=-1,
 )
+
 
 grid.fit(X_train, y_train)
 best_knn = grid.best_estimator_
