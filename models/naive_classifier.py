@@ -1,5 +1,5 @@
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, f1_score, classification_report
 import pandas as pd
 
 training_data = pd.read_csv("training_data_ht2025.csv")
@@ -17,3 +17,6 @@ most_frequent_class = Y_train.mode()[0]
 y_pred = [most_frequent_class] * len(Y_test)
 print(pd.crosstab(y_pred, Y_test))
 print(accuracy_score(Y_test, y_pred))
+print("F1:", f1_score(Y_test, y_pred))
+print(classification_report(Y_test, y_pred))
+# print(f"  ROC-AUC: {roc_auc:.4f}\n")

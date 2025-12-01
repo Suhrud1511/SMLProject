@@ -2,7 +2,7 @@ import os
 import sys
 import sklearn.discriminant_analysis as skl_da
 from sklearn.model_selection import StratifiedKFold
-from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, confusion_matrix
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, confusion_matrix, classification_report
 import pandas as pd
 import warnings
 warnings.filterwarnings('ignore')
@@ -46,6 +46,7 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, model_name):
     print(f"  Accuracy: {accuracy:.4f}")
     print(f"  F1-Score: {f1:.4f}")
     print(f"  ROC-AUC: {roc_auc:.4f}\n")
+    print(classification_report(y_test, y_pred))
     
     return {'accuracy': accuracy, 'f1': f1, 'roc_auc': roc_auc}
 
