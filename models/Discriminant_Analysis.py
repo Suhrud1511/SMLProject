@@ -5,6 +5,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, confusion_matrix, classification_report
 import pandas as pd
 import warnings
+from sklearn.model_selection import GridSearchCV
 warnings.filterwarnings('ignore')
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -16,6 +17,8 @@ preprocessor = BikePreprocessor(
     output_dir='.'
 )
 preprocessor.lda()
+
+
 
 # X = training_data.drop(columns=["increase_stock", "day_of_week"])
 # y = training_data["increase_stock"]
@@ -30,6 +33,31 @@ print(f"  X_train: {X_train.shape}")
 print(f"  X_test: {X_test.shape}")
 print(f"  y_train: {y_train.shape}")
 print(f"  y_test: {y_test.shape}\n")
+
+# Hyperparameter grids for LDA and QDA
+lda_param_grid = [
+    {"solver": ["svd"]},   # shrinkage not allowed
+    {"solver": ["lsqr", "eigen"], "shrinkage": ["auto", 0.1, 0.2, 0.3]}
+]
+
+qda_param_grid = {
+    "reg_param": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
+}
+
+# Hyperparameter tuning function
+def hyperparameter_tuning(model, param_grid, X, y, model_name):
+    print(f"Hyperparameter tuning for {model_name}")
+    gs = GridSearchCV(
+        estimator=model,
+        param_grid=param_grid,
+        cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=42),
+        scoring="f1", 
+        n_jobs=-1
+    )
+
+    gs.fit(X, y)
+    print(f"Best params for {model_name}: {gs.best_params_}\n")
+    return gs.best_estimator_
 
 def evaluate_model(model, X_train, X_test, y_train, y_test, model_name):
     model.fit(X_train, y_train)
@@ -84,22 +112,35 @@ def cross_validate_model(model_class, X, y, n_splits=5, model_name="Model"):
 
 
 if __name__ == '__main__':
-    
-    print("LINEAR DISCRIMINANT ANALYSIS (LDA)")
-    
-    print("\nTrain/Test Evaluation:")
-    evaluate_model(skl_da.LinearDiscriminantAnalysis(), X_train, X_test, y_train, y_test, "LDA")
-    
-    print("Cross-Validation Evaluation:")
     X_full = pd.concat([X_train, X_test], ignore_index=True)
     y_full = pd.concat([y_train, y_test], ignore_index=True)
-    cross_validate_model(skl_da.LinearDiscriminantAnalysis, X_full, y_full, n_splits=5, model_name="LDA")
+    
+    print("LINEAR DISCRIMINANT ANALYSIS (LDA)")
+    tuned_lda = hyperparameter_tuning(
+        skl_da.LinearDiscriminantAnalysis(),
+        lda_param_grid,
+        X_train,
+        y_train,
+        "LDA"
+    )
+    print("\nTrain/Test Evaluation:")
+    evaluate_model(tuned_lda, X_train, X_test, y_train, y_test, "LDA")
+    
+    print("Cross-Validation Evaluation:")
+
+    # cross_validate_model(tuned_lda, X_full, y_full, n_splits=5, model_name="LDA")
     
    
     print("QUADRATIC DISCRIMINANT ANALYSIS (QDA)")
-    
+    tuned_qda = hyperparameter_tuning(
+        skl_da.QuadraticDiscriminantAnalysis(),
+        qda_param_grid,
+        X_train,
+        y_train,
+        "QDA"
+    )
     print("\nTrain/Test Evaluation:")
-    evaluate_model(skl_da.QuadraticDiscriminantAnalysis(), X_train, X_test, y_train, y_test, "QDA")
+    evaluate_model(tuned_qda, X_train, X_test, y_train, y_test, "QDA")
     
     print("Cross-Validation Evaluation:")
-    cross_validate_model(skl_da.QuadraticDiscriminantAnalysis, X_full, y_full, n_splits=5, model_name="QDA")
+    # cross_validate_model(tuned_qda, X_full, y_full, n_splits=5, model_name="QDA")
