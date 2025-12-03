@@ -128,7 +128,7 @@ if __name__ == '__main__':
     
     print("Cross-Validation Evaluation:")
 
-    # cross_validate_model(tuned_lda, X_full, y_full, n_splits=5, model_name="LDA")
+    cross_validate_model(skl_da.LinearDiscriminantAnalysis, X_full, y_full, n_splits=5, model_name="LDA")
     
    
     print("QUADRATIC DISCRIMINANT ANALYSIS (QDA)")
@@ -141,6 +141,6 @@ if __name__ == '__main__':
     )
     print("\nTrain/Test Evaluation:")
     evaluate_model(tuned_qda, X_train, X_test, y_train, y_test, "QDA")
-    
+
     print("Cross-Validation Evaluation:")
-    # cross_validate_model(tuned_qda, X_full, y_full, n_splits=5, model_name="QDA")
+    cross_validate_model(skl_da.QuadraticDiscriminantAnalysis, X_full, y_full, n_splits=5, model_name="QDA")
