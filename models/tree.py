@@ -96,11 +96,13 @@ class TreeClassifierPipeline:
 
         print("\nEvaluating Decision Tree...")
         dt_metrics = self.evaluate_model(self.dt_model, 'Decision Tree')
+        print(f"DT accuracy: {dt_metrics['accuracy']:.4f}")
         print(f"DT F1-Score: {dt_metrics['f1']:.4f}")
         print(f"DT ROC-AUC: {dt_metrics['roc_auc']:.4f}")
 
         print("\nEvaluating Random Forest...")
         rf_metrics = self.evaluate_model(self.rf_model, 'Random Forest')
+        print(f"RF accuracy: {rf_metrics['accuracy']:.4f}")
         print(f"RF F1-Score: {rf_metrics['f1']:.4f}")
         print(f"RF ROC-AUC: {rf_metrics['roc_auc']:.4f}")
 
