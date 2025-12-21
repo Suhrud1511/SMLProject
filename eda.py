@@ -120,6 +120,17 @@ class BikeDataAnalyzer:
         for idx, row in weekday_stats.iterrows():
             report.append(f"{idx}: {row['demand_rate']:.1f}% high demand ({row['n_samples']} samples)")
         
+        # Vacations vs regular days
+        report.append("\n3. VACATION VS REGULAR DAYS")
+        report.append("-"*80)
+        holiday_stats = self.data.groupby('holiday')['target_binary'].agg(['mean', 'count'])
+        holiday_stats.index = ['Regular day', 'Holiday']
+        holiday_stats.columns = ['demand_rate', 'n_samples']
+        holiday_stats['demand_rate'] *= 100
+        
+        for cond, row in holiday_stats.iterrows():
+            report.append(f"  {cond}: {row['demand_rate']:.1f}% demand ({row['n_samples']} samples)")
+        
         # Statistical significance
         weekday_mask = self.data['weekday'] == 1
         t_stat, p_val = stats.ttest_ind(
@@ -141,7 +152,20 @@ class BikeDataAnalyzer:
             month_name = months[month_num-1] if 1 <= month_num <= 12 else str(month_num)
             report.append(f"{month_name}: {row['demand_rate']:.1f}% high demand ({row['n_samples']} samples)")
         
+        # Summertime effect
+        report.append("\n4. SUMMERTIME EFFECT")
+        report.append("-"*80)
+        summertime_stats = self.data.groupby('summertime')['target_binary'].agg(['mean', 'count'])
+        summertime_stats.index = ['no summertime', 'summertime']
+        summertime_stats.columns = ['demand_rate', 'n_samples']
+        summertime_stats['demand_rate'] *= 100
+
+        for cond, row in summertime_stats.iterrows():
+            report.append(f"  {cond}: {row['demand_rate']:.1f}% demand ({row['n_samples']} samples)")
+
         return "\n".join(report)
+
+
     
     def analyze_weather_impact(self):
         """Weather analysis - environmental factors affecting bike usage"""
@@ -149,6 +173,7 @@ class BikeDataAnalyzer:
         report.append("\n" + "="*80)
         report.append("WEATHER IMPACT ANALYSIS")
         report.append("="*80)
+
         
         # Temperature - primary weather factor
         report.append("\n1. TEMPERATURE")
@@ -165,6 +190,18 @@ class BikeDataAnalyzer:
         for cat, row in temp_analysis.iterrows():
             report.append(f"  {cat}: {row['mean']:.1f}% demand ({row['count']} samples)")
         
+        # # Dew point - comfort indicator
+        # report.append("\n1. TEMPERATURE")
+        # report.append("-"*80)
+        # dew_corr = self.data['dew'].corr(self.data['target_binary'])
+        # report.append(f"Correlation with demand: {dew_corr:+.4f}")
+
+        # dew_bins = [-200,-150, -100, -50, 0, 50, 100, 150, 200]
+        # dew_labels = ['<-150', '-150, -100', '-100, -50', '-50, 0', '0, 50', '50, 100', '100, 150', '>150']
+        # dew_cat = pd.cut(self.data['dew'], bins=dew_bins, labels=dew_labels)
+        # dew_analysis = self.data.groupby(dew_cat, observed=True)['target_binary'].agg(['mean', 'count'])
+        # dew_analysis['mean'] *= 100
+
         # Precipitation - inhibits cycling
         report.append("\n2. PRECIPITATION")
         report.append("-"*80)

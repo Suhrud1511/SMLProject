@@ -68,6 +68,11 @@ Lowest demand hours:
 Weekend: 25.0% high demand (464.0 samples)
 Weekday: 15.1% high demand (1136.0 samples)
 
+3. VACATION VS REGULAR DAYS
+--------------------------------------------------------------------------------
+  Regular day: 18.0% demand (1547.0 samples)
+  Holiday: 17.0% demand (53.0 samples)
+
 Weekday vs Weekend significance: p=0.0000
 
 3. SEASONAL PATTERNS
@@ -85,6 +90,11 @@ Oct: 25.2% high demand (119.0 samples)
 Nov: 12.1% high demand (141.0 samples)
 Dec: 4.4% high demand (136.0 samples)
 
+4. SUMMERTIME EFFECT
+--------------------------------------------------------------------------------
+  no summertime: 6.8% demand (570.0 samples)
+  summertime: 24.2% demand (1030.0 samples)
+
 
 ================================================================================
 WEATHER IMPACT ANALYSIS
@@ -93,11 +103,15 @@ WEATHER IMPACT ANALYSIS
 1. TEMPERATURE
 --------------------------------------------------------------------------------
 Correlation with demand: +0.3370
-  <0°C: 0.0% demand (69.0 samples)
-  0-10°C: 3.6% demand (469.0 samples)
-  10-20°C: 18.4% demand (473.0 samples)
-  20-30°C: 29.4% demand (534.0 samples)
-  >30°C: 49.1% demand (55.0 samples)
+  <0�C: 0.0% demand (69.0 samples)
+  0-10�C: 3.6% demand (469.0 samples)
+  10-20�C: 18.4% demand (473.0 samples)
+  20-30�C: 29.4% demand (534.0 samples)
+  >30�C: 49.1% demand (55.0 samples)
+
+1. TEMPERATURE
+--------------------------------------------------------------------------------
+Correlation with demand: +0.1327
 
 2. PRECIPITATION
 --------------------------------------------------------------------------------
@@ -112,248 +126,4 @@ Correlation with demand: +0.3370
 4. WIND SPEED
 --------------------------------------------------------------------------------
 Correlation with demand: +0.0960
-
-
-================================================================================
-LINEAR DISCRIMINANT ANALYSIS (LDA) - SPECIFIC INSIGHTS
-================================================================================
-
-LDA ASSUMPTIONS CHECK:
---------------------------------------------------------------------------------
-
-1. NORMALITY ASSESSMENT
-   LDA performs best when features follow normal distributions
-   Testing each numerical feature (Shapiro-Wilk test):
-
-   temp           : p=0.0000 ✗ Non-normal
-   dew            : p=0.0000 ✗ Non-normal
-   humidity       : p=0.0000 ✗ Non-normal
-   precip         : p=0.0000 ✗ Non-normal
-   snow           : p=1.0000 ✓ Normal
-   snowdepth      : p=0.0000 ✗ Non-normal
-   windspeed      : p=0.0000 ✗ Non-normal
-   cloudcover     : p=0.0000 ✗ Non-normal
-   visibility     : p=0.0000 ✗ Non-normal
-
-   WARNING: 8/9 features are non-normal
-   RECOMMENDATION: Apply transformations (log, Box-Cox) before LDA
-
-2. CLASS SEPARATION ANALYSIS
-   Measuring how well classes separate in feature space:
-
-   temp           : Cohen's d = +1.010 (Large)
-   dew            : Cohen's d = +0.371 (Small)
-   humidity       : Cohen's d = -0.862 (Large)
-   precip         : Cohen's d = -0.198 (Negligible)
-   snow           : Cohen's d = +nan (Negligible)
-
-3. MULTICOLLINEARITY CHECK
-   High correlation between features can destabilize LDA:
-
-   HIGH CORRELATIONS DETECTED:
-   temp <-> dew: 0.872
-
-   RECOMMENDATION: Consider removing one from each pair
-
-4. LDA PREPROCESSING RECOMMENDATIONS
---------------------------------------------------------------------------------
-   • Feature scaling: NOT required (LDA handles different scales)
-   • Transformation: Apply Box-Cox to non-normal features
-   • Encoding: One-hot encode categorical features
-   • Outliers: Consider removal (can skew covariance estimates)
-
-
-================================================================================
-TREE-BASED METHODS - SPECIFIC INSIGHTS
-================================================================================
-
-TREE ADVANTAGES FOR THIS DATASET:
---------------------------------------------------------------------------------
-
-1. NON-LINEAR PATTERNS DETECTION
-   Trees excel with non-monotonic relationships:
-
-   hour_of_day: High variance (0.049) - likely non-linear
-
-2. EXPECTED FEATURE IMPORTANCE RANKING
-   Based on correlation and variance analysis:
-
-   1. temp           : |correlation| = 0.3370
-   2. humidity       : |correlation| = 0.3087
-   3. dew            : |correlation| = 0.1327
-   4. snow           : |correlation| = nan
-   5. visibility     : |correlation| = 0.1134
-   6. windspeed      : |correlation| = 0.0960
-   7. precip         : |correlation| = 0.0593
-   8. snowdepth      : |correlation| = 0.0475
-
-3. CATEGORICAL FEATURE HANDLING
---------------------------------------------------------------------------------
-   Trees handle categorical features natively
-   Categorical features in dataset:
-   • hour_of_day: 24 categories
-   • day_of_week: 7 categories
-   • month: 12 categories
-   • holiday: 2 categories
-   • weekday: 2 categories
-   • summertime: 2 categories
-
-4. POTENTIAL FEATURE INTERACTIONS
-   Trees automatically capture interactions:
-
-   Expected strong interactions:
-   • hour_of_day × weekday (commute patterns)
-   • temp × month (seasonal temperature effects)
-   • precip × windspeed (severe weather conditions)
-
-5. TREE PREPROCESSING RECOMMENDATIONS
---------------------------------------------------------------------------------
-   • Feature scaling: NOT needed
-   • Encoding: Leave categorical as-is or use label encoding
-   • Missing values: Trees handle naturally (surrogate splits)
-   • Outliers: Generally not a concern for trees
-
-   HYPERPARAMETERS TO TUNE:
-   • max_depth: Start with 5-15
-   • min_samples_split: Try 10-50
-   • min_samples_leaf: Try 5-20
-   • For Random Forest: n_estimators=100-500, max_features='sqrt'
-
-
-================================================================================
-LOGISTIC REGRESSION - SPECIFIC INSIGHTS
-================================================================================
-
-LINEARITY ASSESSMENT:
---------------------------------------------------------------------------------
-
-1. FEATURE-TARGET RELATIONSHIPS
-   Pearson correlation (linear relationship indicator):
-
-   temp           : +0.3370 (Strong)
-   humidity       : -0.3087 (Strong)
-   dew            : +0.1327 (Moderate)
-   snow           : +nan (Weak)
-   visibility     : +0.1134 (Moderate)
-   windspeed      : +0.0960 (Weak)
-   precip         : -0.0593 (Weak)
-   snowdepth      : -0.0475 (Weak)
-   cloudcover     : -0.0455 (Weak)
-
-2. FEATURE SCALE ANALYSIS
-   Logistic Regression sensitive to feature scales:
-
-   Feature ranges:
-   cloudcover     : range=  100.00, std=  32.75
-   humidity       : range=   84.04, std=  19.08
-   temp           : range=   44.70, std=   9.26
-   windspeed      : range=   43.80, std=   7.76
-   dew            : range=   42.70, std=  10.03
-
-   Range ratio (max/min): inf:1
-   RECOMMENDATION: Standardization (StandardScaler) is REQUIRED
-
-3. MULTICOLLINEARITY ANALYSIS
-   VIF-style correlation check (corr > 0.7 indicates issues):
-
-   MULTICOLLINEARITY DETECTED:
-   temp <-> dew: 0.872
-
-   RECOMMENDATION: Remove one feature from each highly correlated pair
-
-4. CLASS SEPARABILITY
-   Logistic regression works best with linearly separable classes:
-
-   temp: separation score = 1.020
-   humidity: separation score = 0.863
-
-5. LOGISTIC REGRESSION PREPROCESSING RECOMMENDATIONS
---------------------------------------------------------------------------------
-   • Feature scaling: REQUIRED (use StandardScaler)
-   • Encoding: One-hot encode categoricals (avoid label encoding)
-   • Polynomial features: Consider for temp, hour_of_day
-   • Regularization: Start with L2 (Ridge), tune C parameter
-
-   HYPERPARAMETERS TO TUNE:
-   • C (inverse regularization): Try [0.001, 0.01, 0.1, 1, 10, 100]
-   • penalty: Try both 'l1' and 'l2'
-   • class_weight: Use 'balanced' for imbalanced data
-
-
-================================================================================
-K-NEAREST NEIGHBORS (KNN) - SPECIFIC INSIGHTS
-================================================================================
-
-KNN CRITICAL REQUIREMENTS:
---------------------------------------------------------------------------------
-
-1. FEATURE SCALING ANALYSIS
-   KNN is EXTREMELY sensitive to feature scales (uses distance):
-
-   Raw feature scales:
-   cloudcover     : range=  100.00, std=  32.75
-   humidity       : range=   84.04, std=  19.08
-   temp           : range=   44.70, std=   9.26
-   windspeed      : range=   43.80, std=   7.76
-   dew            : range=   42.70, std=  10.03
-   precip         : range=   25.87, std=   0.92
-   visibility     : range=   15.90, std=   2.32
-   snowdepth      : range=    6.71, std=   0.42
-   snow           : range=    0.00, std=   0.00
-
-   Scale ratio (max/min): inf:1
-   ⚠️  CRITICAL: Without scaling, high-range features will dominate distance
-   RECOMMENDATION: StandardScaler or MinMaxScaler is MANDATORY
-
-2. CURSE OF DIMENSIONALITY
-   Total features: 15
-   Sample size: 1600
-   Samples per dimension: 107
-   ✓ Adequate samples-to-dimensions ratio
-
-3. LOCAL CLASS BALANCE ANALYSIS
-   KNN predictions depend on local neighborhood composition:
-
-
-   Local class balance by hour_of_day:
-   0-3h        :   0.0% high demand (258 samples)
-   4-7h        :   5.5% high demand (272 samples)
-   8-11h       :  21.6% high demand (250 samples)
-   12-15h      :  36.3% high demand (295 samples)
-   16-19h      :  46.8% high demand (237 samples)
-   20-23h      :   0.5% high demand (204 samples)
-
-   Local class balance by temp:
-   <0°C        :   0.0% high demand ( 69 samples)
-   0-10°C      :   3.6% high demand (469 samples)
-   10-20°C     :  18.4% high demand (473 samples)
-   20-30°C     :  29.4% high demand (534 samples)
-   >30°C       :  49.1% high demand ( 55 samples)
-
-4. DISTANCE METRIC SELECTION
---------------------------------------------------------------------------------
-   • Euclidean: Default, works well after standardization
-   • Manhattan: More robust to outliers
-   • Minkowski (p=1.5): Compromise between Euclidean and Manhattan
-
-5. INITIAL K VALUE ESTIMATION
---------------------------------------------------------------------------------
-   Dataset size: 1600
-   sqrt(n) = 40
-   Rule of thumb: Start with K around 40
-   RECOMMENDATION: Grid search K in [20, 40, 60]
-   Use odd K values to avoid ties
-
-6. KNN PREPROCESSING RECOMMENDATIONS
---------------------------------------------------------------------------------
-   • Feature scaling: MANDATORY (StandardScaler or MinMaxScaler)
-   • Encoding: One-hot encode categoricals (increases dimensionality)
-   • Outliers: Can significantly impact predictions - consider removal
-   • Feature selection: Reduce dimensionality if possible
-
-   HYPERPARAMETERS TO TUNE:
-   • n_neighbors: Try odd values in [3, 5, 7, ..., 60]
-   • weights: Try both 'uniform' and 'distance'
-   • metric: Try 'euclidean', 'manhattan', 'minkowski'
-   • p (for Minkowski): Try [1, 1.5, 2]
 
